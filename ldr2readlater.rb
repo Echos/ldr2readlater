@@ -115,20 +115,38 @@ class LDRbrowser
 end
 
 #Instapaper API
-def add_instapaper(url,title)
+def add_instapaper(url,title,ac_instapaper)
   instapaper_api_url='https://www.instapaper.com/api/add'
 
   #パラメタ
   params=Hash::new
-  params['username']=$ac_instapaper['user']
-  params['password']=$ac_instapaper['pass'] 
+  params['username']=ac_instapaper['user']
+  params['password']=ac_instapaper['pass'] 
   params['url']=url
   params['title']=title
 
-  agent = WWW::Mechanize.new
+  agent = Mechanize.new
   page = agent.post(instapaper_api_url,params)
   return page.code
   
+end
+
+#Read it Later API
+def add_ril(url,title,ac_ril)
+  ril_api_url='https://readitlaterlist.com/v2/add'
+
+  #パラメタ
+  params=Hash::new
+  params['apikey']=ac_ril['api_key']
+  params['username']=ac_ril['user']
+  params['password']=ac_ril['pass'] 
+  params['url']=url
+  params['title']=title
+
+  agent = Mechanize.new
+  page = agent.post(ril_api_url,params)
+  #p page.header()
+  return page.code
 end
 
 #オプションチェック
@@ -144,28 +162,44 @@ if(opt_hash[:r]) then
 end
 
 
-exit
 
 #pin情報取得
-ldr = LDRbrowser.new
-p pin_list = ldr.get_pin 
-
+ldr = LDRbrowser.new(ac_ldr)
+pin_list = ldr.get_pin 
 
 #削除用配列
 remove_list = Array::new
 
-exit
 
 #instapaperに追加
-pin_list.each do |l|
-  title = l['title']
-  url =  l['link']
-
-  code = add_instapaper(url,title)
-  if(code=="201")
-    remove_list << url
+if(opt_hash[:i]) then
+  pin_list.each do |l|
+    title = l['title']
+    url =  l['link']
+    
+    code = add_instapaper(url,title,ac_instapaper)
+    if(code=="201")
+      remove_list << url
+    end
   end
 end
+#instapaperに追加
+if(opt_hash[:r]) then
+  pin_list.each do |l|
+    title = l['title']
+    url =  l['link']
+    
+    code = add_ril(url,title,ac_ril)
+    if(code=="200")
+      remove_list << url
+    end
+  end
+end
+
+#重複を取り除く
+#そもそもInstapaperとread it laterを両方使うとかないような気がするので、
+#重複の場合の措置はどうした方がいいだろう。。。
+remove_list.uniq!
 
 #LDRピンを削除
 remove_list.each do |l|
