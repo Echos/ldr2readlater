@@ -37,8 +37,7 @@ class LDRbrowser
   @@agent = nil
 
   def initialize
-    
-    @@agent = WWW::Mechanize.new
+    @@agent = Mechanize.new
     page = @@agent.get(LDR_LOGIN_URL)
 
     form = page.forms.first
