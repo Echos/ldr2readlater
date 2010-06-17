@@ -10,8 +10,8 @@ require 'pit'
 
 
 #変数
-$ac_ldr #アカウント情報LDR # !> global variable `$ac_ldr' not initialized
-$ac_instapaper # アカウント情報 instapeper # !> global variable `$ac_instapaper' not initialized
+$ac_ldr 
+$ac_instapaper 
 
 #アカウントの設定
 def account()
@@ -44,11 +44,11 @@ class LDRbrowser
     form = page.forms.first
     form.livedoor_id=$ac_ldr['user']
     form.password=$ac_ldr['pass']
-    res = @@agent.submit(form) # => #<WWW::Mechanize::Page
+    res = @@agent.submit(form) 
 
     #get API key
-    page = @@agent.get(LDR_TOP_URL) # => #<WWW::Mechanize::Page
-    @@api_key = @@agent.cookies.find{|c| c.name=='reader_sid'}.value # => "13cc980429ff0a0365acceb8b3570bae"
+    page = @@agent.get(LDR_TOP_URL) 
+    @@api_key = @@agent.cookies.find{|c| c.name=='reader_sid'}.value 
   end
 
 
@@ -71,7 +71,7 @@ class LDRbrowser
 end
 
 def add_instapaper(url,title)
-  instapaper_api_url='https://www.instapaper.com/api/add' # !> Insecure world writable dir /usr/local/bin in PATH, mode 040777
+  instapaper_api_url='https://www.instapaper.com/api/add'
 
   #パラメタ
   params=Hash::new
