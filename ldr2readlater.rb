@@ -71,6 +71,7 @@ def account_ril
 end
 
 
+#LDR API
 class LDRbrowser
   LDR_TOP_URL='http://reader.livedoor.com/'
   LDR_LOGIN_URL='https://member.livedoor.com/login/index'
@@ -80,13 +81,13 @@ class LDRbrowser
   @@api_key =''
   @@agent = nil
 
-  def initialize
+  def initialize(ac_ldr)
     @@agent = Mechanize.new
     page = @@agent.get(LDR_LOGIN_URL)
 
     form = page.forms.first
-    form.livedoor_id=$ac_ldr['user']
-    form.password=$ac_ldr['pass']
+    form.livedoor_id=ac_ldr['user']
+    form.password=ac_ldr['pass']
     res = @@agent.submit(form) 
  # !> Insecure world writable dir /usr/local/bin in PATH, mode 040777
     #get API key
@@ -113,6 +114,7 @@ class LDRbrowser
   
 end
 
+#Instapaper API
 def add_instapaper(url,title)
   instapaper_api_url='https://www.instapaper.com/api/add'
 
@@ -142,16 +144,17 @@ if(opt_hash[:r]) then
 end
 
 
-
 exit
-# アカウント情報取得
-account
 
 #pin情報取得
 ldr = LDRbrowser.new
-pin_list = ldr.get_pin 
+p pin_list = ldr.get_pin 
 
+
+#削除用配列
 remove_list = Array::new
+
+exit
 
 #instapaperに追加
 pin_list.each do |l|
