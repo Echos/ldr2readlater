@@ -5,27 +5,71 @@ require 'rubygems'
 require 'mechanize'
 require 'json'
 require 'open-uri'
+require 'optparse'
 require 'net/http'
 require 'pit'
 
+#コマンドラインオプション
+def checkoption
+  opt = OptionParser.new
 
-#変数
-$ac_ldr 
-$ac_instapaper 
+  #オプション情報保持用
+  opt_hash = Hash::new
 
-#アカウントの設定
-def account()
-  $ac_ldr = Pit::get('ldr', :require => {
+  begin 
+    #コマンドラインオプション定義
+    opt.on('-h','--help','USAGEを表示。')    {|v| puts opt.help;exit }
+
+    opt.on('-i',
+           'Instapaperに登録'){
+      |v| opt_hash[:i] = v } 
+
+    opt.on('-r',
+           'Read it Laterに登録') {
+      |v| opt_hash[:r] = v }
+
+    #オプションのパース
+    opt.parse!(ARGV)
+
+    if(opt_hash.length==0)
+      puts opt.help
+      exit
+    end
+
+    return opt_hash
+  rescue
+    #指定外のオプションが存在する場合はUsageを表示
+    puts opt.help
+    exit
+  end
+end
+
+
+#アカウントの設定(LDR)
+def account_ldr
+  return Pit::get('ldr', :require => {
                          'user' => 'your id of LDR',
                          'pass' => 'your pass of LDR',
                        })
-  
-  $ac_instapaper = Pit::get('instapaper', :require => {
+end
+
+#アカウントの設定(Instapaper)
+def account_instapaper
+  return Pit::get('instapaper', :require => {
                              'user' => 'your id of Instapaper',
                              'pass' => 'your pass of Instapaper',
                            })
 end
   
+#アカウントの設定(Read it Later)
+def account_ril
+  return Pit::get('readitlater', :require => {
+                             'user' => 'your id of "Read it later"',
+                             'pass' => 'your pass of "Read it later"',
+                             'api_key' => 'your api_key of "Read it later"',
+                           })
+end
+
 
 class LDRbrowser
   LDR_TOP_URL='http://reader.livedoor.com/'
@@ -44,7 +88,7 @@ class LDRbrowser
     form.livedoor_id=$ac_ldr['user']
     form.password=$ac_ldr['pass']
     res = @@agent.submit(form) 
-
+ # !> Insecure world writable dir /usr/local/bin in PATH, mode 040777
     #get API key
     page = @@agent.get(LDR_TOP_URL) 
     @@api_key = @@agent.cookies.find{|c| c.name=='reader_sid'}.value 
@@ -85,6 +129,21 @@ def add_instapaper(url,title)
   
 end
 
+#オプションチェック
+opt_hash = checkoption
+
+#アカウント情報取得
+ac_ldr=account_ldr
+if(opt_hash[:i]) then
+  ac_instapaper=account_instapaper
+end
+if(opt_hash[:r]) then
+  ac_ril=account_ril
+end
+
+
+
+exit
 # アカウント情報取得
 account
 
