@@ -158,7 +158,7 @@ def task
   pin_list.each do |l|
     title = l['title']
     url   = l['link']
-    pin_list.each do |l|
+
       #登録
       if (@ril)
         code = add_ril(url,title)
@@ -168,7 +168,7 @@ def task
       if( code=="201" or code=="200")
         #正常登録
         remove_list << url
-      end
+
     end
   end
   
