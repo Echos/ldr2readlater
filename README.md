@@ -7,8 +7,10 @@ Livedoor Reader のピン情報を定期的に取得し、あとで読むサー�
 ## 動かし方
 
 ### githubから取得
+```sh
 $ git clone git://github.com/Echos/ldr2readlater.git
 $ cd ldr2readlater
+```
 
 ### heroku コマンドのインストール（未実施の方）
 ```sh
