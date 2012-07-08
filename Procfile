@@ -1,1 +1,1 @@
-clock: bundle exec clockwork ldr2readitlater.rb
+clock: bundle exec clockwork ldr2readlater.rb
