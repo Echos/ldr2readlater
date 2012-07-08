@@ -7,14 +7,20 @@ require 'json'
 require 'open-uri'
 require 'optparse'
 require 'net/http'
+require 'clockwork'
 require 'pit'
+require 'logger'
+
+#ロガー作成
+@logger = Logger::new( STDOUT )
+@logger.level = Logger::INFO
 
 #コマンドラインオプション
 def checkoption
   opt = OptionParser.new
 
   #オプション情報保持用
-  opt_hash = Hash::new
+  @opt_hash = Hash::new
 
   begin 
     #コマンドラインオプション定義
@@ -22,21 +28,21 @@ def checkoption
 
     opt.on('-i',
            'Instapaperに登録'){
-      |v| opt_hash[:i] = v } 
+      |v| @opt_hash[:i] = v } 
 
     opt.on('-r',
            'Read it Laterに登録') {
-      |v| opt_hash[:r] = v }
+      |v| @opt_hash[:r] = v }
 
     #オプションのパース
     opt.parse!(ARGV)
 
-    if(opt_hash.length==0)
+    if(@opt_hash.length==0)
       puts opt.help
       exit
     end
 
-    return opt_hash
+    return @opt_hash
   rescue
     #指定外のオプションが存在する場合はUsageを表示
     puts opt.help
@@ -89,7 +95,7 @@ class LDRbrowser
     form.livedoor_id=ac_ldr['user']
     form.password=ac_ldr['pass']
     res = @@agent.submit(form) 
- # !> Insecure world writable dir /usr/local/bin in PATH, mode 040777
+
     #get API key
     page = @@agent.get(LDR_TOP_URL) 
     @@api_key = @@agent.cookies.find{|c| c.name=='reader_sid'}.value 
@@ -150,59 +156,71 @@ def add_ril(url,title,ac_ril)
 end
 
 #オプションチェック
-opt_hash = checkoption
+@opt_hash = checkoption
 
 #アカウント情報取得
-ac_ldr=account_ldr
-if(opt_hash[:i]) then
-  ac_instapaper=account_instapaper
+@ac_ldr=account_ldr
+if(@opt_hash[:i]) then
+  @ac_instapaper=account_instapaper
 end
-if(opt_hash[:r]) then
-  ac_ril=account_ril
+if(@opt_hash[:r]) then
+  @ac_ril=account_ril
 end
 
-
-
-#pin情報取得
-ldr = LDRbrowser.new(ac_ldr)
-pin_list = ldr.get_pin 
-
-#削除用配列
-remove_list = Array::new
-
-
-#instapaperに追加
-if(opt_hash[:i]) then
-  pin_list.each do |l|
-    title = l['title']
-    url =  l['link']
-    
-    code = add_instapaper(url,title,ac_instapaper)
+#ピン情報を登録する
+def task
+  #pin情報取得
+  ldr = LDRbrowser.new(@ac_ldr)
+  pin_list = ldr.get_pin 
+  
+  #削除用配列
+  remove_list = Array::new
+  
+  #instapaperに追加
+  if(@opt_hash[:i]) then
+    pin_list.each do |l|
+      title = l['title']
+      url =  l['link']
+      
+      code = add_instapaper(url,title,@ac_instapaper)
     if(code=="201")
       remove_list << url
     end
-  end
-end
-#instapaperに追加
-if(opt_hash[:r]) then
-  pin_list.each do |l|
-    title = l['title']
-    url =  l['link']
-    
-    code = add_ril(url,title,ac_ril)
-    if(code=="200")
-      remove_list << url
     end
   end
+  
+  #read it laterに追加
+  if(@opt_hash[:r]) then
+    pin_list.each do |l|
+      title = l['title']
+      url   =  l['link']
+      
+      code = add_ril(url,title,@ac_ril)
+      if(code=="200")
+        remove_list << url
+      end
+    end
+  end
+  
+  #重複を取り除く
+  #そもそもInstapaperとread it laterを両方使うとかないような気がするので、
+  #重複の場合の措置はどうした方がいいだろう。。。
+  remove_list.uniq!
+  
+  #LDRピンを削除
+  remove_list.each do |l|
+    ldr.remove_pin(l)
+  end
 end
 
-#重複を取り除く
-#そもそもInstapaperとread it laterを両方使うとかないような気がするので、
-#重複の場合の措置はどうした方がいいだろう。。。
-remove_list.uniq!
-
-#LDRピンを削除
-remove_list.each do |l|
-  ldr.remove_pin(l)
+#ジョブの登録
+Clockwork::handler do |job|
+  @logger.info "実行"
+  task
 end
+
+#10分毎繰り返し
+@logger.info "here"
+Clockwork::every(10.seconds, 'frequent.job')
+@logger.info "here2"
 
